@@ -7,7 +7,7 @@ databases). The abstraction barrier only works one way: this module has to know
 all about the internals of models in order to get the information it needs.
 """
 
-import copy
+import copy, re
 
 from django.utils.datastructures import SortedDict
 from django.utils.encoding import force_text
@@ -1658,6 +1658,7 @@ class Query(object):
         Adds data to the various extra_* attributes for user-created additions
         to the query.
         """
+        insertion_re = re.compile(r'(?<!%)%s')
         if select:
             # We need to pair any placeholder markers in the 'select'
             # dictionary with their parameters in 'select_params' so that
@@ -1672,9 +1673,8 @@ class Query(object):
                 entry = force_text(entry)
                 entry_params = []
                 pos = entry.find("%s")
-                while pos != -1:
+                for x in insertion_re.findall(entry):
                     entry_params.append(next(param_iter))
-                    pos = entry.find("%s", pos + 2)
                 select_pairs[name] = (entry, entry_params)
             # This is order preserving, since self.extra_select is a SortedDict.
             self.extra.update(select_pairs)
